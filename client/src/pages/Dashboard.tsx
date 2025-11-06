@@ -2,16 +2,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Network, Globe, Laptop, Activity } from "lucide-react";
 import { useAddresses } from "@/hooks/useAddresses";
-import { useDevices } from "@/hooks/useDevices";
 
 export default function Dashboard() {
-  const { addresses } = useAddresses();
-  const { devices } = useDevices();
+  const { addresses, loading } = useAddresses();
 
-  const totalAddresses = addresses?.length || 0;
-  const usedAddresses = addresses?.filter(a => a.statut === "attribuee").length || 0;
-  const freeAddresses = addresses?.filter(a => a.statut === "disponible").length || 0;
-  const activeDevices = devices?.filter(d => d.actif).length || 0;
+  if (loading || !addresses) {
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        Chargement des appareils du réseau…
+      </div>
+    );
+  }
+
+  const normalized = addresses.map(a => ({
+    ...a,
+    statut: a.statut?.toLowerCase()
+  }));
+
+  const totalAddresses = normalized.length;
+  const usedAddresses = normalized.filter(a => a.statut === "attribuee").length;
+  const freeAddresses = normalized.filter(a => a.statut === "disponible").length;
+  const activeDevices = usedAddresses;
 
   const stats = [
     {
@@ -42,7 +53,9 @@ export default function Dashboard() {
     },
   ];
 
-  const recentDevices = devices?.filter(d => d.actif).slice(0, 4) || [];
+  // ✅ On prend les 4 dernières IP scannées
+  const recentDevices = normalized.slice(-4).reverse();
+
   return (
     <div className="p-8">
       <div className="mb-8">
@@ -60,7 +73,7 @@ export default function Dashboard() {
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {stat.title}
               </CardTitle>
-              <stat.icon className={cn("h-5 w-5", stat.color)} />
+              <stat.icon className={`${stat.color} h-5 w-5`} />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{stat.value}</div>
@@ -94,13 +107,13 @@ export default function Dashboard() {
                   <div className="flex items-center space-x-4">
                     <Laptop className="h-8 w-8 text-muted-foreground" />
                     <div>
-                      <p className="font-medium text-foreground">{device.nom}</p>
+                      <p className="font-medium text-foreground">{device.ip}</p>
                       <p className="text-sm text-muted-foreground">
-                        {device.adresse_mac}
+                        {device.statut}
                       </p>
                     </div>
                   </div>
-                  <Badge variant="default" className="bg-success text-success-foreground">
+                  <Badge className="bg-success text-success-foreground">
                     Actif
                   </Badge>
                 </div>
@@ -111,8 +124,4 @@ export default function Dashboard() {
       </Card>
     </div>
   );
-}
-
-function cn(...classes: string[]) {
-  return classes.filter(Boolean).join(" ");
 }
