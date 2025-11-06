@@ -1,9 +1,6 @@
-# ipmanager/views.py
-
 from rest_framework import viewsets
 from .models import AdresseIP, Device
-from .serializers import AdresseIPSerializer, DeviceSerializer
-
+from ipmanager.serializers.serializers import AdresseIPSerializer, DeviceSerializer
 
 
 class AdresseIPViewSet(viewsets.ModelViewSet):

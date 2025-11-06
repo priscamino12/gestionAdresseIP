@@ -1,59 +1,29 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-
-export type DeviceType = "ordinateur" | "imprimante" | "serveur" | "camera" | "autre";
+import { useEffect, useState } from "react";
 
 export interface Device {
-  id: string;
+  id: number;
   nom: string;
-  type: DeviceType;
   adresse_mac: string;
   actif: boolean;
-  derniere_detection: string;
-  created_at: string;
-  updated_at: string;
 }
 
-export const useDevices = () => {
-  const queryClient = useQueryClient();
+export function useDevices() {
+  const [devices, setDevices] = useState<Device[] | null>(null);
 
-  const { data: devices, isLoading } = useQuery({
-    queryKey: ["devices"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("appareils")
-        .select("*")
-        .order("derniere_detection", { ascending: false });
-      
-      if (error) throw error;
-      return data as Device[];
-    },
-  });
+  useEffect(() => {
+    async function fetchDevices() {
+      try {
+        const res = await fetch("http://localhost:8000/api/devices/");
+        if (!res.ok) throw new Error("Erreur lors de la récupération des appareils");
+        const data = await res.json();
+        setDevices(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
 
-  const addDevice = useMutation({
-    mutationFn: async (device: Omit<Device, "id" | "created_at" | "updated_at" | "derniere_detection" | "actif">) => {
-      const { data, error } = await supabase
-        .from("appareils")
-        .insert(device)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["devices"] });
-      toast.success("Appareil ajouté avec succès");
-    },
-    onError: (error: any) => {
-      toast.error("Erreur lors de l'ajout de l'appareil");
-    },
-  });
+    fetchDevices();
+  }, []);
 
-  return {
-    devices,
-    isLoading,
-    addDevice: addDevice.mutate,
-  };
-};
+  return { devices };
+}

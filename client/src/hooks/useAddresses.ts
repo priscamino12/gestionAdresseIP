@@ -1,61 +1,29 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
-export type IPStatus = "disponible" | "attribuee" | "reservee";
+import { useEffect, useState } from "react";
 
-export interface IPAddress {
-  id: string;
+export interface AdresseIP {
+  id: number;
   ip: string;
-  statut: IPStatus;
-  sous_reseau_id: string;
-  created_at: string;
-  updated_at: string;
+  statut: "disponible" | "attribuee";
 }
 
-export const useAddresses = (subnetId?: string) => {
-  const queryClient = useQueryClient();
+export function useAddresses() {
+  const [addresses, setAddresses] = useState<AdresseIP[] | null>(null);
 
-  const { data: addresses, isLoading } = useQuery({
-    queryKey: ["addresses", subnetId],
-    queryFn: async () => {
-      let query = supabase
-        .from("adresses_ip")
-        .select("*")
-        .order("ip");
-      
-      if (subnetId) {
-        query = query.eq("sous_reseau_id", subnetId);
+  useEffect(() => {
+    async function fetchAddresses() {
+      try {
+        const res = await fetch("http://localhost:8000/api/adresses/");
+        if (!res.ok) throw new Error("Erreur lors de la récupération des adresses");
+        const data = await res.json();
+        setAddresses(data);
+      } catch (err) {
+        console.error(err);
       }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      return data as IPAddress[];
-    },
-  });
+    }
 
-  const updateStatus = useMutation({
-    mutationFn: async ({ id, statut }: { id: string; statut: IPStatus }) => {
-      const { error } = await supabase
-        .from("adresses_ip")
-        .update({ statut })
-        .eq("id", id);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["addresses"] });
-      toast.success("Statut mis à jour");
-    },
-    onError: () => {
-      toast.error("Erreur lors de la mise à jour");
-    },
-  });
+    fetchAddresses();
+  }, []);
 
-  return {
-    addresses,
-    isLoading,
-    updateStatus: updateStatus.mutate,
-  };
-};
+  return { addresses };
+}
