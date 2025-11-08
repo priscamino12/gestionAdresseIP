@@ -1,43 +1,58 @@
-import { useEffect, useState } from "react";
+// src/hooks/useAddresses.ts
+import { useEffect, useMemo, useState } from "react";
 
-export type IPStatus = "disponible" | "attribuee" | "Attribuée" | string;
+export type IPStatus = "disponible" | "attribuee" | string;
 
 export interface AdresseIP {
   id: number | null;
   ip: string;
   statut: IPStatus;
+  actif?: boolean;                 // ✅ nouveau
+  derniere_detection?: string | null;
 }
 
+export function useAddresses(networkCidr = "192.168.1.0/24") {
+  const [addresses, setAddresses] = useState<AdresseIP[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export function useAddresses() {
-  const [addresses, setAddresses] = useState<AdresseIP[] | null>(null);
-  const [loading, setLoading] = useState(true);
+  async function fetchAddresses() {
+    try {
+      const url = `http://127.0.0.1:8000/api/scan/?network=${encodeURIComponent(networkCidr)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      // normaliser & typer
+      const normalized: AdresseIP[] = (data || []).map((a: any) => ({
+        id: a.id ?? null,
+        ip: a.ip,
+        statut: (a.statut || "disponible").toLowerCase(),
+        actif: Boolean(a.actif),
+        derniere_detection: a.derniere_detection ?? null,
+      }));
+
+      setAddresses(normalized);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function fetchAddresses() {
-      try {
-        const res = await fetch("http://127.0.0.1:8000/api/scan/");
-        const data = await res.json();
-
-        // ✅ normalisation
-        const normalized = data.map((addr: any) => ({
-          id: addr.id ?? null,
-          ip: addr.ip,
-          statut: (addr.statut || "").toLowerCase(),
-        }));
-
-        setAddresses(normalized);
-        console.log("Données reçues du backend :", normalized);
-
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchAddresses();
-  }, []);
+    const id = setInterval(fetchAddresses, 10_000); // 🔁 refresh toutes les 10s
+    return () => clearInterval(id);
+  }, [networkCidr]);
 
-  return { addresses, loading };
+  // Quelques dérivés utiles si tu veux les exposer directement
+  const stats = useMemo(() => {
+    const total = addresses.length;
+    const used = addresses.filter(a => a.statut === "attribuee").length;
+    const free = addresses.filter(a => a.statut === "disponible").length;
+    const active = addresses.filter(a => a.actif).length;
+
+    return { total, used, free, active };
+  }, [addresses]);
+
+  return { addresses, isLoading, stats, refetch: fetchAddresses };
 }
