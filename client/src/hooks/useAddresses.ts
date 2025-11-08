@@ -9,6 +9,9 @@ export interface AdresseIP {
   statut: IPStatus;
   actif?: boolean;                 // ✅ nouveau
   derniere_detection?: string | null;
+  sous_reseau_id: string | number; // <-- ajoute cette ligne
+  created_at: string;
+  updated_at: string;
 }
 
 export function useAddresses(networkCidr = "192.168.1.0/24") {

@@ -26,23 +26,24 @@ export default function AddSubnetDialog() {
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.nom || !formData.plage_ip || !formData.passerelle) {
-      toast.error("Veuillez remplir tous les champs requis");
-      return;
-    }
+  e.preventDefault();
 
-    addSubnet(formData);
-    setOpen(false);
-    setFormData({
-      nom: "",
-      plage_ip: "",
-      passerelle: "",
-      dns: "8.8.8.8",
-      total_adresses: 254,
-    });
-  };
+  if (!formData.nom || !formData.plage_ip || !formData.passerelle) {
+    alert("Veuillez remplir tous les champs requis");
+    return;
+  }
+
+  addSubnet(formData); // utilise le mutation du hook
+  setOpen(false);
+  setFormData({
+    nom: "",
+    plage_ip: "",
+    passerelle: "",
+    dns: "8.8.8.8",
+    total_adresses: 254,
+  });
+};
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

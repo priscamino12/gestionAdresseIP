@@ -1,9 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 export interface Subnet {
-  id: string;
+  id: number;
   nom: string;
   plage_ip: string;
   passerelle: string;
@@ -16,36 +14,33 @@ export interface Subnet {
 export const useSubnets = () => {
   const queryClient = useQueryClient();
 
-  const { data: subnets, isLoading } = useQuery({
+  const { data: subnets, isLoading } = useQuery<Subnet[]>({
     queryKey: ["subnets"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sous_reseaux")
-        .select("*")
-        .order("nom");
-      
-      if (error) throw error;
-      return data as Subnet[];
+      const res = await fetch("/api/sous-reseaux/");
+      if (!res.ok) throw new Error("Erreur lors de la récupération des sous-réseaux");
+      return res.json();
     },
   });
 
   const addSubnet = useMutation({
     mutationFn: async (subnet: Omit<Subnet, "id" | "created_at" | "updated_at">) => {
-      const { data, error } = await supabase
-        .from("sous_reseaux")
-        .insert(subnet)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+      const res = await fetch("/api/sous-reseaux/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(subnet),
+      });
+      if (!res.ok) throw new Error("Erreur lors de l'ajout du sous-réseau");
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subnets"] });
-      toast.success("Sous-réseau ajouté avec succès");
+      alert("Sous-réseau ajouté avec succès !");
     },
     onError: (error: any) => {
-      toast.error("Erreur lors de l'ajout du sous-réseau");
+      alert("Erreur lors de l'ajout du sous-réseau");
     },
   });
 
