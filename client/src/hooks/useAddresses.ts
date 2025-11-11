@@ -9,7 +9,8 @@ export interface AdresseIP {
   statut: IPStatus;
   actif?: boolean;                 // ✅ nouveau
   derniere_detection?: string | null;
-  sous_reseau_id: string | number; // <-- ajoute cette ligne
+  /* sous_reseau_id: string | number; */
+  sous_reseau_id?: number | null;  // <-- ajoute cette ligne
   created_at: string;
   updated_at: string;
 }
@@ -31,6 +32,7 @@ export function useAddresses(networkCidr = "192.168.1.0/24") {
         statut: (a.statut || "disponible").toLowerCase(),
         actif: Boolean(a.actif),
         derniere_detection: a.derniere_detection ?? null,
+        sous_reseau_id: a.sous_reseau ?? null, 
       }));
 
       setAddresses(normalized);

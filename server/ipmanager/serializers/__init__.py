@@ -1,3 +1,7 @@
+""" from .adresse_ip_serializers import AdresseIPSerializer
+from .device_serializers import DeviceSerializer
+from .sous_reseau_serializers import SousReseauSerializer
+ """
 from .adresse_ip_serializers import AdresseIPSerializer
 from .device_serializers import DeviceSerializer
 from .sous_reseau_serializers import SousReseauSerializer

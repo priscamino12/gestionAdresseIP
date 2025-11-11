@@ -44,13 +44,17 @@ export default function Subnets() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {subnets.map((subnet) => {
             // Filtrer les adresses appartenant à ce sous-réseau
-           const subnetAddresses = addresses?.filter(a => a.sous_reseau_id.toString() === subnet.id.toString()) || [];
+            const subnetAddresses =
+              addresses?.filter(
+                a =>
+                  a.sous_reseau_id === subnet.id &&    // appartient au sous-reseau
+                  a.actif === true                     // uniquement actives
+              ) || [];
 
-            
-            // Compter les IP utilisées et totales
-            const used = subnetAddresses.filter(a => a.statut === "attribuee").length;
-            const total = subnet.total_adresses || subnetAddresses.length;
+            const used = subnetAddresses.length;
+            const total = subnet.total_adresses;
             const usagePercent = total > 0 ? Math.round((used / total) * 100) : 0;
+
 
             return (
               <Card key={subnet.id}>

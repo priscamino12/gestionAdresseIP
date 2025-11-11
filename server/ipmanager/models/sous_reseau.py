@@ -3,7 +3,7 @@ from django.db import models
 class SousReseau(models.Model):
     nom = models.CharField(max_length=100)
     plage_ip = models.CharField(max_length=50)
-    passerelle = models.CharField(max_length=15)
+    passerelle = models.CharField(max_length=255, null=False, default='0.0.0.0')
     dns = models.CharField(max_length=50, default="8.8.8.8")
     total_adresses = models.IntegerField(default=254)
 
